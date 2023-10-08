@@ -13,6 +13,8 @@ add_library(${PROJECT_NAME}_objs OBJECT
     src/hello.cpp
     src/POST/registration/registration.hpp
     src/POST/registration/registration.cpp
+    src/GET/get_balance/get_balance.hpp
+    src/GET/get_balance/get_balance.cpp
 )
 target_link_libraries(${PROJECT_NAME}_objs PUBLIC userver-postgresql)
 

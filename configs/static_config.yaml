@@ -65,6 +65,11 @@ components_manager:
             method: POST
             task_processor: main-task-processor
 
+        handler-get_balance:
+            path: /bank/balance
+            method: GET
+            task_processor: main-task-processor
+
         postgres-db-1:
             dbconnection: $dbconnection
             blocking_task_processor: fs-task-processor

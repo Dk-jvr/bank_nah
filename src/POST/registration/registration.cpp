@@ -21,6 +21,7 @@ namespace pg_service_template {
     namespace {
 
         const std::string kInsertUser = R"~(INSERT INTO hello_schema.users VALUES ($1, bytea($2), uuid($3)))~";
+        const std::string kInsertUserBalance = R"~(INSERT INTO hello_schema.user_balance VALUES (uuid($1)))~";
 
         class Registration final : public userver::server::handlers::HttpHandlerJsonBase {
             
@@ -43,6 +44,7 @@ namespace pg_service_template {
                     std::string password = userver::crypto::hash::Sha256(password_str, userver::crypto::hash::OutputEncoding::kHex);
                     std::string user_id = userver::utils::generators::GenerateUuid();
                     auto result = pg_cluster_->Execute(pg::ClusterHostType::kMaster, kInsertUser, login, password, user_id);
+                    auto result2 = pg_cluster_->Execute(pg::ClusterHostType::kMaster, kInsertUserBalance, user_id);
                     builder["login"] = login;
                     builder["password"] = password;
                     builder["user_id"] = user_id;
