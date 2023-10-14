@@ -20,8 +20,8 @@ namespace pg_service_template {
 
     namespace {
 
-        const std::string kInsertUser = R"~(INSERT INTO hello_schema.users VALUES ($1, bytea($2), uuid($3)))~";
-        const std::string kInsertUserBalance = R"~(INSERT INTO hello_schema.user_balance VALUES (uuid($1)))~";
+        const std::string kInsertUser = R"~(WITH userdata AS (INSERT INTO hello_schema.users VALUES (uuid($1), $2, bytea($3)))
+         INSERT INTO hello_schema.user_balance VALUES(uuid($1)))~";
 
         class Registration final : public userver::server::handlers::HttpHandlerJsonBase {
             
@@ -43,10 +43,7 @@ namespace pg_service_template {
                     std::string password_str = request_json["password"].As<std::string>();
                     std::string password = userver::crypto::hash::Sha256(password_str, userver::crypto::hash::OutputEncoding::kHex);
                     std::string user_id = userver::utils::generators::GenerateUuid();
-                    auto result = pg_cluster_->Execute(pg::ClusterHostType::kMaster, kInsertUser, login, password, user_id);
-                    auto result2 = pg_cluster_->Execute(pg::ClusterHostType::kMaster, kInsertUserBalance, user_id);
-                    builder["login"] = login;
-                    builder["password"] = password;
+                    auto result = pg_cluster_->Execute(pg::ClusterHostType::kMaster, kInsertUser, user_id, login, password);
                     builder["user_id"] = user_id;
                     return builder.ExtractValue();
                 }

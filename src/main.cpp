@@ -7,9 +7,9 @@
 #include <userver/storages/postgres/component.hpp>
 #include <userver/utils/daemon_run.hpp>
 
-#include "hello.hpp"
 #include "POST/registration/registration.hpp"
 #include "GET/get_balance/get_balance.hpp"
+#include "POST/changing_balance/changing_balance.hpp"
 
 int main(int argc, char* argv[]) {
   auto component_list = userver::components::MinimalServerComponentList()
@@ -20,9 +20,9 @@ int main(int argc, char* argv[]) {
                             .Append<userver::components::Postgres>("postgres-db-1")
                             .Append<userver::clients::dns::Component>();
 
-  pg_service_template::AppendHello(component_list);
   pg_service_template::AppendRegistration(component_list);
   pg_service_template::AppendBalance(component_list);
+  pg_service_template::AppendChanging(component_list);
 
   return userver::utils::DaemonMain(argc, argv, component_list);
 }
