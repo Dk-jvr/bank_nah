@@ -77,11 +77,6 @@ namespace pg_service_template {
                     auto user_id = request_json["user_id"].As<std::string>();
                     auto summary = request_json["summary"].As<int>();
 
-                    std::optional<int> check_val(int val) {
-                        if(!val)
-                            return std::nullopt;
-                    }
-
                     auto operation_id = userver::utils::generators::GenerateUuid();
                     OperationType type;
                     if(summary >= 0)
@@ -92,25 +87,24 @@ namespace pg_service_template {
                     LOG_DEBUG() << summary;
 
                     auto set_balance = pg_cluster_->Execute(pg::ClusterHostType::kMaster, kSetBalance, user_id, summary);
-                    if(set_balance.RowsAffected() == 1){
-                        for(const auto& row : set_balance){
-                            user_id = row["user_id"].As<std::string>();
-                            if(row["balance"].As<std::optional<int>>() != std::nullopt){
-                                auto set_operation = pg_cluster_->Execute(pg::ClusterHostType::kMaster, kSetOperation, operation_id, user_id, type, summary, OperationStatus::kSuccesful);
-                                builder["balance"] = row["balance"].As<int>();
-                                builder["status"] = "Succesful";
-                                return builder.ExtractValue();
-                            } else {
-                                auto set_operation = pg_cluster_->Execute(pg::ClusterHostType::kMaster, kSetOperation, operation_id, user_id, type, summary, OperationStatus::kFailed);
-                                response.SetStatus(userver::server::http::HttpStatus::kForbidden);
-                                LOG_ERROR() << "Insufficient funds";
-                                return builder.ExtractValue();
-                            }
+                    for(const auto& row : set_balance){
+                        auto balance = row["balance"].As<std::optional<int>>();
+                        auto user = row["user_id"].As<std::optional<std::string>>();
+                        if(balance != std::nullopt){
+                            auto set_operation = pg_cluster_->Execute(pg::ClusterHostType::kMaster, kSetOperation, operation_id, user_id, type, summary, OperationStatus::kSuccesful);
+                            builder["balance"] = row["balance"].As<int>();
+                            builder["status"] = "Succesful";
+                            return builder.ExtractValue();
+                        } else if(user != std::nullopt) {
+                            auto set_operation = pg_cluster_->Execute(pg::ClusterHostType::kMaster, kSetOperation, operation_id, user_id, type, summary, OperationStatus::kFailed);
+                            response.SetStatus(userver::server::http::HttpStatus::kForbidden);
+                            LOG_ERROR() << "Insufficient funds";
+                            return builder.ExtractValue();
+                        } else {
+                            response.SetStatus(userver::server::http::HttpStatus::kNotFound);
+                            LOG_ERROR() << "User not found...";
+                            return builder.ExtractValue();
                         }
-                    } else {
-                        response.SetStatus(userver::server::http::HttpStatus::kNotFound);
-                        LOG_ERROR() << "User not found...";
-                        return builder.ExtractValue();
                     }
                 } catch (std::exception& ex) {
                     response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
