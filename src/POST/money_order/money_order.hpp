@@ -6,5 +6,5 @@
 #include <userver/components/component_list.hpp>
 
 namespace pg_service_template {
-    void AppendAuthorization(userver::components::ComponentList& component_list);
+    void AppendOrder(userver::components::ComponentList& component_list);
 } 

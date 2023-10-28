@@ -15,6 +15,9 @@ add_library(${PROJECT_NAME}_objs OBJECT
     src/GET/get_balance/get_balance.cpp
     src/POST/changing_balance/changing_balance.hpp
     src/POST/changing_balance/changing_balance.cpp
+    src/public_components/enums.hpp
+    src/POST/money_order/money_order.hpp
+    src/POST/money_order/money_order.cpp
 )
 target_link_libraries(${PROJECT_NAME}_objs PUBLIC userver-postgresql)
 

@@ -20,8 +20,8 @@ namespace pg_service_template {
 
     namespace {
 
-        const std::string kInsertUser = R"~(WITH userdata AS (INSERT INTO hello_schema.users VALUES (uuid($1), $2, bytea($3)))
-         INSERT INTO hello_schema.user_balance VALUES(uuid($1)))~";
+        const std::string kInsertUser = R"~(WITH userdata AS (INSERT INTO hello_schema.users VALUES ($1, $2, bytea($3)))
+         INSERT INTO hello_schema.user_balance VALUES($1))~";
 
         class Registration final : public userver::server::handlers::HttpHandlerJsonBase {
             

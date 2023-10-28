@@ -21,7 +21,7 @@ namespace pg_service_template {
 
     namespace{
 
-        const std::string kGetBalance = R"~(SELECT balance FROM hello_schema.user_balance WHERE user_id = uuid($1))~";
+        const std::string kGetBalance = R"~(SELECT balance FROM hello_schema.user_balance WHERE user_id = $1)~";
 
         class Balance final : public userver::server::handlers::HttpHandlerJsonBase {
 

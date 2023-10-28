@@ -1,4 +1,5 @@
 #include "changing_balance.hpp"
+#include "../../public_components/enums.hpp"
 
 #include <fmt/format.h>
 #include <userver/components/component.hpp>
@@ -18,26 +19,6 @@
 namespace pg = userver::storages::postgres;
 namespace JValue = userver::formats::json;
 
-namespace userver::storages::postgres::io {
-    template <>
-    struct CppToUserPg<OperationType> : EnumMappingBase<OperationType>
-    {
-        static constexpr DBTypeName postgres_name = "OperationType";
-        static constexpr Enumerator enumerators[] {
-            {EnumType::kWithdrawal, "Withdrawal"},
-            {EnumType::kRefill, "Refill"},
-            {EnumType::kTransfer, "Transfer"}};
-    };
-    template <>
-    struct CppToUserPg<OperationStatus> : EnumMappingBase<OperationStatus>
-    {
-        static constexpr DBTypeName postgres_name = "OperationStatus";
-        static constexpr Enumerator enumerators[] {
-            {EnumType::kSuccesful, "succesful"},
-            {EnumType::kFailed, "failed"}};
-    };
-    
-}
 
 namespace pg_service_template {
 
@@ -45,7 +26,7 @@ namespace pg_service_template {
 
         const std::string kSetBalance = R"~(WITH user_info AS (
             SELECT user_id FROM hello_schema.users 
-            WHERE user_id = uuid($1)
+            WHERE user_id = $1
         ),
             balance_info AS (
             UPDATE hello_schema.user_balance
@@ -53,9 +34,9 @@ namespace pg_service_template {
             WHERE user_id = (SELECT user_id FROM user_info) AND ($2 >= 0 OR balance > ABS($2))
             RETURNING balance
         )
-        SELECT (SELECT user_id FROM user_info)::TEXT, (SELECT balance FROM balance_info);)~";
+        SELECT (SELECT user_id FROM user_info), (SELECT balance FROM balance_info);)~";
 
-        const std::string kSetOperation = R"~(INSERT INTO hello_schema.operations VALUES (uuid($1), uuid($2), $3, $4, $5))~";
+        const std::string kSetOperation = R"~(INSERT INTO hello_schema.operations VALUES ($1, $2, $3, $4, $5, NOW()))~";
 
         class Changing final : public userver::server::handlers::HttpHandlerJsonBase {
 
@@ -83,8 +64,6 @@ namespace pg_service_template {
                         type = OperationType::kRefill;
                     else 
                         type = OperationType::kWithdrawal;
-
-                    LOG_DEBUG() << summary;
 
                     auto set_balance = pg_cluster_->Execute(pg::ClusterHostType::kMaster, kSetBalance, user_id, summary);
                     for(const auto& row : set_balance){
